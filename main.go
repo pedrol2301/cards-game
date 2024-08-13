@@ -202,11 +202,21 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/huh/spinner"
 	"golang.org/x/exp/rand"
 )
+
+type Game struct {
+	SoloGame bool
+	IsDealer bool
+	Player1  Player
+	Player2  Player
+	Deck     []Card
+}
 
 type Card struct {
 	Value int
@@ -259,10 +269,89 @@ func CalcularPontos(hand []Card) int {
 	return total
 }
 
-func main() {
+func DetermineWinner(game *Game) {
+	if game.Player1.Points > 21 {
+		fmt.Println("Player 1 estourou! Player 2 ganha!")
+		return
+	}
 
-	var Player1 Player
-	var Player2 Player
+	if game.Player2.Points > 21 {
+		fmt.Println("Player 2 estourou! Player 1 ganha!")
+		return
+	}
+
+	if game.Player1.Points > game.Player2.Points {
+		fmt.Println("Player 1 ganha!")
+	} else if game.Player2.Points > game.Player1.Points {
+		fmt.Println("Player 2 ganha!")
+	} else {
+		fmt.Println("Empate!")
+	}
+}
+
+func PlayerTurn(player *Player, deck *[]Card) {
+	for {
+
+		_ = spinner.New().Title("Shuffle cards...").Run()
+
+		time.Sleep(2 * time.Second)
+
+		fmt.Printf("%s, suas cartas: %+v\n", player.Name, player.Hand)
+		fmt.Println("O que deseja fazer? (1) Pedir (2) Parar")
+		var choice int
+		fmt.Scan(&choice)
+
+		if choice == 1 {
+			*deck = append(*deck, (*deck)[0])
+			player.Hand = append(player.Hand, (*deck)[0])
+			*deck = (*deck)[1:]
+
+			player.Points = CalcularPontos(player.Hand)
+			if player.Points >= 21 {
+				break
+			}
+		} else if choice == 2 {
+			break
+		}
+	}
+}
+
+func DealerTurn(game *Game) {
+	fmt.Printf("Dealer revela sua mão: %+v\n", game.Player2.Hand)
+
+	for game.Player2.Points < 17 {
+		game.Player2.Hand = append(game.Player2.Hand, game.Deck[0])
+		game.Deck = game.Deck[1:]
+
+		game.Player2.Points = CalcularPontos(game.Player2.Hand)
+	}
+}
+
+func StartGame(game *Game) {
+	game.Player1.Hand = append(game.Player1.Hand, game.Deck[0], game.Deck[1])
+	game.Player2.Hand = append(game.Player2.Hand, game.Deck[2], game.Deck[3])
+
+	game.Player1.Points = CalcularPontos(game.Player1.Hand)
+	game.Player2.Points = CalcularPontos(game.Player2.Hand)
+
+	// Mostra a carta inicial do dealer
+	if game.IsDealer {
+		fmt.Printf("Dealer mostra: %v de %v\n", game.Player2.Hand[0].Value, game.Player2.Hand[0].Suit)
+	}
+
+	PlayerTurn(&game.Player1, &game.Deck)
+
+	if game.SoloGame {
+		DealerTurn(game)
+	} else {
+		PlayerTurn(&game.Player2, &game.Deck)
+	}
+
+	DetermineWinner(game)
+}
+
+func main() {
+	var game Game
 
 	accessible := false
 
@@ -278,60 +367,55 @@ func main() {
 			huh.NewInput().
 				Title("Nome do jogador 1").
 				Placeholder("Nome").
-				Value(&Player1.Name).Validate(func(s string) error {
+				Value(&game.Player1.Name).Validate(func(s string) error {
 				if s == "" {
 					return errors.New("nome é obrigatório")
 				}
 				return nil
-			}))).WithAccessible(accessible)
+			}),
+		),
+		huh.NewGroup(
+			huh.NewConfirm().
+				Title("Jogar sozinho?").
+				Value(&game.SoloGame).
+				Affirmative("Sim").
+				Negative("Não"),
+		),
+	).WithAccessible(accessible)
 
 	err := form.Run()
 	if err != nil {
 		println("Erro ao rodar form")
-	}
-
-	deck := CreateDeck()
-
-	Player1.Hand = append(Player1.Hand, deck[0])
-	Player1.Hand = append(Player1.Hand, deck[1])
-
-	Player2.Hand = append(Player2.Hand, deck[2])
-	Player2.Hand = append(Player2.Hand, deck[3])
-
-	Player1.Points = CalcularPontos(Player1.Hand)
-	Player2.Points = CalcularPontos(Player2.Hand)
-
-	for Player1.Points < 21 && Player2.Points < 21 {
-		Player1.Hand = append(Player1.Hand, deck[0])
-		Player1.Points = CalcularPontos(Player1.Hand)
-
-		Player2.Hand = append(Player2.Hand, deck[1])
-		Player2.Points = CalcularPontos(Player2.Hand)
-	}
-
-	if Player1.Points == 21 {
-		println("Player 1 ganhou")
 		return
 	}
 
-	if Player2.Points == 21 {
-		println("Player 2 ganhou")
-		return
+	if game.SoloGame {
+		game.Player2.Name = "Dealer"
+		game.IsDealer = true
+	} else {
+		secondPlayerForm := huh.NewForm(
+			huh.NewGroup(
+				huh.NewInput().
+					Title("Nome do jogador 2").
+					Placeholder("Nome").
+					Value(&game.Player2.Name).Validate(func(s string) error {
+					if s == "" {
+						return errors.New("nome é obrigatório")
+					}
+					return nil
+				}),
+			),
+		).WithAccessible(accessible)
+
+		err := secondPlayerForm.Run()
+		if err != nil {
+			println("Erro ao rodar form")
+			return
+		}
+
+		game.IsDealer = false
 	}
 
-	if Player1.Points > 21 {
-		println("Player 2 ganhou")
-		return
-	}
-
-	if Player2.Points > 21 {
-		println("Player 1 ganhou")
-		return
-	}
-
-	if Player1.Points == Player2.Points {
-		println("Empate")
-		return
-	}
-
+	game.Deck = CreateDeck()
+	StartGame(&game)
 }
