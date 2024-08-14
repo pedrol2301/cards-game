@@ -5,8 +5,11 @@ go 1.22.5
 require (
 	github.com/charmbracelet/huh v0.5.2
 	github.com/charmbracelet/huh/spinner v0.0.0-20240807175152-d8d2851dbc1a
-	github.com/charmbracelet/lipgloss v0.12.1
-	github.com/charmbracelet/x/exp/strings v0.0.0-20240809174237-9ab0ca04ce0c
+)
+
+require (
+	github.com/charmbracelet/lipgloss v0.12.1 // indirect
+	github.com/charmbracelet/x/exp/strings v0.0.0-20240809174237-9ab0ca04ce0c // indirect
 )
 
 require (
@@ -31,7 +34,7 @@ require (
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
+	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect

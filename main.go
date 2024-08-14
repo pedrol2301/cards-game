@@ -296,12 +296,25 @@ func PlayerTurn(player *Player, deck *[]Card) {
 
 		time.Sleep(2 * time.Second)
 
-		fmt.Printf("%s, suas cartas: %+v\n", player.Name, player.Hand)
-		fmt.Println("O que deseja fazer? (1) Pedir (2) Parar")
-		var choice int
-		fmt.Scan(&choice)
+		var choice bool
+		var cardsString string
+		for _, cardVal := range player.Hand {
+			cardsString += fmt.Sprintf("%d de %s\n", cardVal.Value, cardVal.Suit)
+		}
+		// fmt.Printf("%s, suas cartas: %+v\n", player.Name, player.Hand)
 
-		if choice == 1 {
+		form := huh.NewForm(huh.NewGroup(
+			huh.NewNote().Description(fmt.Sprintf("Suas cartas são:\n%s", cardsString)),
+
+			huh.NewConfirm().Title(fmt.Sprintf("Pontos: %d", player.Points)).
+				Affirmative("Pedir").
+				Negative("Parar").
+				Value(&choice),
+		))
+
+		form.Run()
+
+		if choice {
 			*deck = append(*deck, (*deck)[0])
 			player.Hand = append(player.Hand, (*deck)[0])
 			*deck = (*deck)[1:]
@@ -310,14 +323,21 @@ func PlayerTurn(player *Player, deck *[]Card) {
 			if player.Points >= 21 {
 				break
 			}
-		} else if choice == 2 {
+		} else {
 			break
 		}
 	}
 }
 
 func DealerTurn(game *Game) {
-	fmt.Printf("Dealer revela sua mão: %+v\n", game.Player2.Hand)
+	// fmt.Printf("%+v\n", game.Player2.Hand)
+	var dealerHandString string
+	for _, cards := range game.Player2.Hand {
+		dealerHandString += fmt.Sprintf("%d de %s\n", cards.Value, cards.Suit)
+	}
+	huh.NewForm(
+		huh.NewGroup(huh.NewNote().Title("Dealer revela sua mão:\n").Description(dealerHandString)),
+	).Run()
 
 	for game.Player2.Points < 17 {
 		game.Player2.Hand = append(game.Player2.Hand, game.Deck[0])
@@ -336,7 +356,11 @@ func StartGame(game *Game) {
 
 	// Mostra a carta inicial do dealer
 	if game.IsDealer {
-		fmt.Printf("Dealer mostra: %v de %v\n", game.Player2.Hand[0].Value, game.Player2.Hand[0].Suit)
+
+		dealerHandString := fmt.Sprintf("%d de %s", game.Player2.Hand[0].Value, game.Player2.Hand[0].Suit)
+		huh.NewForm(
+			huh.NewGroup(huh.NewNote().Title("Dealer mostra sua mão:\n").Description(dealerHandString)),
+		).Run()
 	}
 
 	PlayerTurn(&game.Player1, &game.Deck)
