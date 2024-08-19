@@ -271,21 +271,21 @@ func CalcularPontos(hand []Card) int {
 
 func DetermineWinner(game *Game) {
 	if game.Player1.Points > 21 {
-		fmt.Println("Player 1 estourou! Player 2 ganha!")
+		fmt.Printf("%s estourou! %s ganha!\n", game.Player1.Name, game.Player2.Name)
 		return
 	}
 
 	if game.Player2.Points > 21 {
-		fmt.Println("Player 2 estourou! Player 1 ganha!")
+		fmt.Printf("%s estourou! %s ganha!\n", game.Player2.Name, game.Player1.Name)
 		return
 	}
 
 	if game.Player1.Points > game.Player2.Points {
-		fmt.Println("Player 1 ganha!")
+		fmt.Printf("%s ganha!\n", game.Player1.Name)
 	} else if game.Player2.Points > game.Player1.Points {
-		fmt.Println("Player 2 ganha!")
+		fmt.Printf("%s ganha!\n", game.Player2.Name)
 	} else {
-		fmt.Println("Empate!")
+		fmt.Printf("Empate!\n")
 	}
 }
 
